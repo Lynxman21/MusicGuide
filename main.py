@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import os
 import random
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 load_dotenv()
 
@@ -179,3 +180,7 @@ def get_events(name: str = Path(..., min_length=1, description="Trzeba podać na
     min_avg, max_avg = get_stats(res_to_return)
     res_to_return = random.sample(res_to_return, min(3, len(res_to_return)))
     return {"arr": res_to_return, "min_avg": min_avg, "max_avg": max_avg}
+
+@app.get("/")
+async def serve_index():
+    return FileResponse("index.html")
