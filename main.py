@@ -60,6 +60,10 @@ def get_artist_album(name: str= Path(..., min_length=1, description="Trzeba poda
     res_albums = res_json["topalbums"]["album"]
     res = []
 
+    if not isinstance(res_albums, list):
+        if res_albums: res_albums = [res_albums]
+        else: res_albums = []
+
     for a in res_albums:
         images = a.get("image", [])
         img_url = ""
