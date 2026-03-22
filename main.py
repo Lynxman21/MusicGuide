@@ -67,9 +67,11 @@ def get_artist_album(name: str= Path(..., min_length=1, description="Trzeba poda
             ind = min(2, len(images)-1)
             img_url = images[ind].get("#text", "")
 
-        playcount = 0
-        if a.get("playcount", 0) != "":
-            playcount = int(a.get("playcount", 0))
+        p = a.get("playcount", 0)
+        try:
+            playcount = int(p) if p else 0
+        except(ValueError, TypeError):
+            playcount = 0
 
         res.append((a.get("name", "Brak nazwy"), img_url, playcount))
 
