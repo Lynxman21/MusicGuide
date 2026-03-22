@@ -69,7 +69,10 @@ def get_artist_album(name: str= Path(..., min_length=1, description="Trzeba poda
 
         p = a.get("playcount", 0)
         try:
-            playcount = int(p) if p else 0
+            if isinstance(p, (str, int, float)) and p:
+                playcount = int(p)
+            else:
+                playcount = 0
         except(ValueError, TypeError):
             playcount = 0
 
