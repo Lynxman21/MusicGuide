@@ -69,7 +69,7 @@ def get_artist_album(name: str= Path(..., min_length=1, description="Trzeba poda
 
         p = a.get("playcount", 0)
         try:
-            if isinstance(p, (str, int, float)) and p:
+            if isinstance(p, (str, int, float)) and p and str(p).isdigit():
                 playcount = int(p)
             else:
                 playcount = 0
@@ -81,18 +81,10 @@ def get_artist_album(name: str= Path(..., min_length=1, description="Trzeba poda
     if (len(res) == 0): return {"avg": 0, "min": 0, "max": 0,"albums": []}
 
     avg = 0
-    mini = float("inf")
-    maxi = -float("inf")
-    for element in res:
-        avg += element[-1]
+    counts = [element[2] for element in res]
 
-        if (mini > element[-1]):
-            mini = element[-1]
-        if (maxi < element[-1]):
-            maxi = element[-1]
-
-    avg = avg/len(res)
-    return {"avg": avg, "min": mini, "max": maxi,"albums": res[:min(3, len(res))]}
+    avg = sum(counts)/len(res)
+    return {"avg": round(avg,2), "min": min(counts), "max": max(counts),"albums": res[:min(3, len(res))]}
 
 @app.get("/tags/{name}")
 def get_tags(name: str = Path(..., min_length=1, description="Trzeba podać nazwę artysty"), passwd: str = Header(None)):
