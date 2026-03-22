@@ -34,7 +34,7 @@
     </body>
 
     <script>
-        const API_URL = ""
+        const API_URL = "http://localhost:8000"
 
         const main_form = document.getElementById("search-form");
         const country_form = document.getElementById("country-form");
@@ -94,7 +94,6 @@
                 .catch(error => alert("Błąd " + error));
 
                 for (let i=0;i<artists.length;i++) {
-                    await sleep(200);
 
                     await fetch(`${API_URL}/albums/${encodeURIComponent(artists[i])}`,{
                     headers: {

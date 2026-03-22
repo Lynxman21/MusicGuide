@@ -66,7 +66,12 @@ def get_artist_album(name: str= Path(..., min_length=1, description="Trzeba poda
         if images:
             ind = min(2, len(images)-1)
             img_url = images[ind].get("#text", "")
-        res.append((a.get("name", "Brak nazwy"), img_url, int(a.get("playcount", 0))))
+
+        playcount = 0
+        if a.get("playcount", 0) != "":
+            playcount = int(a.get("playcount", 0))
+
+        res.append((a.get("name", "Brak nazwy"), img_url, playcount))
 
     if (len(res) == 0): return {"avg": 0, "min": 0, "max": 0,"albums": []}
 
@@ -119,6 +124,10 @@ def get_artists_by_country(name: str = Path(..., min_length=1, description="Trze
         )
     
     res = res_json["topartists"]["artist"]
+
+    if not res:
+        return {"arr": [], "min": {"name": "Brak", "listeners": 0}, "max": {"name": "Brak", "listeners": 0}}
+
     mini = min(res, key=lambda element: int(element.get("listeners", 0)))
     maxi = max(res, key=lambda element: int(element.get("listeners", 0)))
     
