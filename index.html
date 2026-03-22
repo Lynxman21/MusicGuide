@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pl">
+    <head>
+        <meta charset="utf-8">
+        <title>MusicGuide</title>
+    </head>
+    <body>
+        <h1>Poznaj nową muzykę!</h1>
+        <form id="search-form">
+            <label for="artistInput">Artysta</label>
+            <input type="text" id="artistInput" required>
+
+            <label for="artistNumberInput">Ilość artystów (do 3)</label>
+            <input type="number" id="artistNumberInput" min="1" max="3" required>
+
+            <button type="submit">Szukaj podobnych twórców</button>
+        </form>
+
+        <div id="resultsContainer" style="display: none;">
+            <h2>Wyniki analizy:</h2>
+            <div id="statsList"></div>
+        </div>
+
+        <form id="country-form">
+            <label for="countryInput">Kraj (po angielsku)</label>
+            <input type="text" id="countryInput" required>
+            <button type="submit">Szukaj twórców</button>
+        </form>
+
+        <div id="resultsCountryContainer" style="display: none;">
+            <h2>Wyniki analizy:</h2>
+            <ul id="artistList"></ul>
+        </div>
+    </body>
+
+    <script>
+        const API_URL = "http://127.0.0.1:8000"
+
+        const main_form = document.getElementById("search-form");
+        const country_form = document.getElementById("country-form");
+
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        main_form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            document.getElementById("resultsContainer").style.display = "block";
+            document.getElementById("statsList").innerHTML = "";
+
+            const artist = document.getElementById("artistInput").value;
+            const limit = document.getElementById("artistNumberInput").value;
+
+            let artists = [];
+
+            await sleep(500);
+
+            try {
+                const resultPlace = document.getElementById("statsList");
+
+                await fetch(`${API_URL}/tags/${artist}`, {
+                    headers: {
+                        "passwd": "52Br:hX"
+                    }
+                })
+                .then(res => {
+                    if (!res.ok) throw new Error("Błąd komunikacji z serwerem");
+                    return res.json();
+                })
+                .then(data => {
+                    resultPlace.innerHTML += `<h2>Tagi ${artist}</h2>`;
+                    for (let i=0;i<data.length;i++) {
+                        resultPlace.innerHTML += `${data[i]}, `;
+                    }
+                })
+                .catch(error => alert("Błąd " + error));
+
+                await fetch(`${API_URL}/new-artist/${artist}/${limit}`, {
+                    headers: {
+                        "passwd": "52Br:hX"
+                    }
+                })
+                .then(res => {
+                    if (!res.ok) throw new Error("Błąd komunikacji z serwerem");
+                    return res.json();
+                })
+                .then(data => {
+                    let index = 0;
+
+                    data.forEach(item => {
+                        let i = document.createElement("div");
+                        i.innerHTML = `<div id="${index}"><h3>${item}</h3>`;
+                        resultPlace.appendChild(i);
+                        index += 1;
+                        artists.push(item);
+                    });
+                })
+                .catch(error => alert("Błąd " + error));
+
+                for (let i=0;i<artists.length;i++) {
+                    await sleep(500);
+
+                    await fetch(`${API_URL}/albums/${artists[i]}`,{
+                    headers: {
+                        "passwd": "52Br:hX"
+                    }
+                    })
+                    .then(res => {
+                        if (!res.ok) throw new Error("Błąd komunikacji z serwerem");
+                        return res.json();
+                    })
+                    .then(data => {
+                        const div_element = document.getElementById(i);
+                        let add_to_html = "";
+
+                        add_to_html += `<div id="artist-${i}" style="display: flex; gap: 20px; align-items: flex-start; margin-top: 10px;">`;
+
+                        for (let j=0;j<3;j++) {
+                            add_to_html += `<figure style="margin: 0; padding 10px 0;">
+                                <img src=${data.albums[j][1]} style="width: 100px;">
+                                <figcaption>${data.albums[j][0]}</figcaption>
+                                </figure>`;
+                        }
+
+                        add_to_html += "</div>";
+
+                        div_element.innerHTML += add_to_html;
+
+                        div_element.innerHTML += `<ul>
+                                <li>
+                                <b>Średnia słuchaczy (albumy): </b>
+                                ${data.avg} 
+                                </li>
+                                <li>
+                                <b>Minimalna liczba słuchaczy (albumy): </b>
+                                ${data.min} 
+                                </li>
+                                <li>
+                                <b>Maksymalna liczba słuchaczy (albumy): </b>
+                                ${data.max} 
+                                </li>
+                            </ul>`;
+                    })
+                    .catch(err => alert("Błąd " + error))
+
+                    await fetch(`${API_URL}/events/${artists[i]}`, {
+                        headers: {
+                            "passwd": "52Br:hX"
+                        }
+                    })
+                    .then(res => {
+                        if (!res.ok) throw new Error("Błąd komunikacji z serwerem");
+                        return res.json();
+                    })
+                    .then(data => {
+                        let to_add = "";
+                        to_add += `<div id="event-${i}" style="display: flex; gap: 20px; align-items: flex-start; margin-top: 10px;">`;
+                        to_add += "<h2>Eventy</h2>" 
+
+                        for (let j=0;j<data["arr"].length;j++) {
+                            let arr_element = data["arr"][j];
+
+                            to_add += `<ul>
+                                    <li>
+                                    <b>Nazwa eventu: </b>
+                                    ${arr_element.name} 
+                                    </li>
+                                    <li>
+                                    <b>Data: </b>
+                                    ${arr_element.date} 
+                                    </li>
+                                    <li>
+                                    <b>Miasto: </b>
+                                    ${arr_element.city} 
+                                    </li>
+                                    <li>
+                                    <b>Minimalna cena: </b>
+                                    ${arr_element.price_min} 
+                                    </li>
+                                    <li>
+                                    <b>Maksymalna cena: </b>
+                                    ${arr_element.price_max} 
+                                    </li>
+                                    <li>
+                                    <b>Waluta: </b>
+                                    ${arr_element.currency}
+                                    </li>
+                                </ul>`;
+                        }
+
+                        to_add += "</div>";
+                        to_add +=`<ul>
+                            <li><b>Średnia z minimalnych cen: </b> ${data.min_avg}</li>
+                            <li><b>Średnia z maksymalnych cen: </b> ${data.max_avg}</li>
+                        </ul>`
+                        document.getElementById(`artist-${i}`).innerHTML += to_add;
+                    })
+                    .catch(error => {
+                        console.log("Nie udało się znaleźć eventów. Upewnij się, że nazwa jest poprawna.");
+                        return;
+                    });
+                }
+            } catch (error) {
+                alert("Problem " + error);
+            }
+        });
+
+        country_form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const country = document.getElementById("countryInput").value;
+            const countryPlace = document.getElementById("artistList");
+
+            fetch(`${API_URL}/country/${country}`, {
+                headers: {
+                    "passwd": "52Br:hX"
+                }
+            })
+            .then(res => {
+                if (!res.ok) throw new Error("Błąd komunikacji z serwerem");
+                return res.json();
+            })
+            .then(data => {
+                countryPlace.innerHTML = "";
+                const artists = data.arr;
+                countryPlace.innerHTML += `<ul>`;
+
+                for (let i=0;i<artists.length;i++) {
+                    countryPlace.innerHTML += `<li>${artists[i]}</li>`;
+                }
+                countryPlace.innerHTML += `</ul>`;
+
+                countryPlace.innerHTML += `
+                <b>${data.min.name}</b> ${data.min.listeners}
+                <b>${data.max.name}</b> ${data.max.listeners}
+                `;
+            })
+            .catch(err => alert("Błąd " + error));
+
+            document.getElementById("resultsCountryContainer").style.display = "block";
+        });
+    </script>
+</html>
